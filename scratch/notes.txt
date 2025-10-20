@@ -136,18 +136,27 @@ python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --datas
  -i 50000
 
 
+
+
+
+
+
  /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
  -d /home/bwilliams/encode/code/lichtfeld-studio/data/reef_test \
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/reef_test_no3Dbin \
- --eval \
  --headless \
  -i 5000
 
   /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
  -d /home/bwilliams/encode/code/lichtfeld-studio/data/tandt/truck_copy \
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/truck_copy \
- --eval \
- --headless \
+  --headless \
  -i 10000
 
+
+/home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
+ -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
+ -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva \
+ --headless \
+ -i 5000
 
