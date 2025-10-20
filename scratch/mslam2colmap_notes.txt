@@ -1,0 +1,51 @@
+# ESTIMATE CAMERA Intrinsics
+# We dont have camera intrinsics, mast3r-slam can benefit slightly from these (table 1 in paper)
+# they are 100% necessary for splat. 
+# So to do this we run colmap on just 100 images. We could ofc run colmap on thousands of images
+# but this is very slow and is exactly what we are aiming to avoid using master-slam! Now,
+# we could use the keyframes output by master-slam, but they don't have enough overlap for colmap.
+# So instead we go back to the raw data and use the first 100 images.
+# I have made a script that will run this and estimate the intrinsics using the relevant parts of
+# colmap. Shinjeong said only 3 images needed to register, colmap has internal checks to discard
+# any that are of a low enough match. However, we can of course make sure its more to be conservative.
+
+# Next challenge: master-slam always outputs 512x384 pixel images. So for splatting we need to adjust 
+# intrinsics accordingly.
+# I've checked and it is okay to pass master-slam the intrinsics estimated from the raw images by colmnap,
+# at line 179 in main.py it calls the class Intrinsics on the intrinsics taken from the yaml. This converts
+# the intrinsics to the right format.
+
+
+# When running master-slam, you can set the path to the intrinsics yaml like so:
+python main.py --dataset <path/to/folder> --config config/base.yaml --calib <path./to/intrinsics.yaml>
+
+
+
+# Setup Notes for mslam2colmap Pipeline
+
+## 1. Install COLMAP
+sudo apt-get update && sudo apt-get install colmap
+
+## 2. Environment Setup & Dependencies
+# Create/activate uv environment
+cd /home/bwilliams/encode/code
+source ben-splat-env/bin/activate
+
+# Install required Python packages into existing ben-splat-env
+# NOTE: Use 'uv pip install' to add to existing env, not 'uv add' (creates new .venv)
+uv pip install --python ben-splat-env/bin/python pycolmap open3d numpy torch torchvision torchaudio wildflow
+
+#### starting new approach
+/home/bwilliams/encode/data/intermediate_data/reef_soneva_clmp (note reef_soneva is taken form the dataset name, so this should be a var which si set)
+# keep in mind using the fisheye or not fish eye model!
+bash estimate_intrinsics.sh --images_path /home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled_png/ --dataset_name soneva_reef --overwrite
+
+## Critical Issues & Solutions
+### VS Code Snap Conflicts
+- **Problem**: Running script from VS Code terminal causes COLMAP library errors
+- **Cause**: VS Code snap sets XDG_DATA_DIRS and other snap environment variables
+- **Solution**: Script now automatically unsets these variables before running COLMAP
+### Conda Conflicts  
+- **Problem**: Conda's library paths cause GLIBC_PRIVATE errors with COLMAP
+- **Solution**: Script auto-detects and deactivates conda if active
+

@@ -1,0 +1,52 @@
+# Envs / build / IDE
+.venv/
+ben-splat-env/
+.env
+.uv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.vscode/
+.DS_Store
+
+# Binary / large artefacts
+*.bin
+*.ply
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.tfrecord
+*.db
+*.lock
+
+# Images / media (avoid pushing large datasets)
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.webp
+*.mp4
+*.mov
+*.avi
+
+# Logs / outputs
+logs/
+**/logs/
+**/keyframes/
+**/for_splat/images/
+**/for_splat/sparse/**/points3D.*
+**/for_splat/sparse/**/images.*
+**/for_splat/sparse/**/database.db
+**/intermediate_data/
+**/outputs/
+**/runs/
+**/tmp/
+
+# Local data roots
+data/
+**/data/
