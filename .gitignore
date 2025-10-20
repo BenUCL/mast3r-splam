@@ -50,3 +50,7 @@ logs/
 # Local data roots
 data/
 **/data/
+
+MASt3R-SLAM/
+lichtfeld-studio/
+.python-version
