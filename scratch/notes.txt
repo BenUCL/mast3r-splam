@@ -101,15 +101,15 @@ python main.py --dataset datasets/reef_soneva --config config/base.yaml
 # Next I solved the intrinsics estimation. More notes in Notion, but in short we run colmap on the first 100 raw
 # images (not keyframes) which can be used to estimate the intrinsics with a bash script that calls colmap functions.
 # This will also output a summary text file on how well it did:
-bash estimate_intrinsics.sh /
---images_path /home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled_png/ /
+bash /home/bwilliams/encode/code/scratch/estimate_intrinsics.sh \
+--images_path /home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled_png/ \
 --dataset_name reef_soneva
 
 # Then we take the outputs and create an intrinsics.yaml that can be used by master-slam to improve the slam. 
-# It also will convert the intrinsics to a cameras.bin file which is used by lichtfeld-studio for splatting.
-# It will store outputs in the intermediate directory
+# It also will convert the intrinsics to a cameras.bin file,  which is used by lichtfeld-studio for splatting,
+# and will put this inside the for_splat folder inside the intermediate_data directory.
 conda activate mast3r-slam
-python shuttle_intrinsics.py --dataset reef_soneva
+python /home/bwilliams/encode/code/scratch/shuttle_intrinsics.py --dataset reef_soneva
 
 # Next, we can actually run m-slam. We will find the reconstruction is better with these intrinisics than with
 # the default intrinsics yaml used by m-slam:
@@ -119,8 +119,8 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
  --config /home/bwilliams/encode/code/MASt3R-SLAM/config/base.yaml \
  --calib /home/bwilliams/encode/data/intermediate_data/reef_soneva/intrinsics.yaml
 
- # Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format.
- # We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
+# Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format.
+# We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
 python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --dataset reef_soneva
 
 # Optional, could try add some funcionality to make points3D.bin, potentially from the points3D.bin output
@@ -128,35 +128,13 @@ python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --datas
 # the early stages of splatting?
 
 # Now lets try splatting with the m-slam outputs and conversions to colmap:
-/home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
- -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/reef_soneva \
- --eval \
- --headless \
- -i 50000
-
-
-
-
-
-
-
- /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
- -d /home/bwilliams/encode/code/lichtfeld-studio/data/reef_test \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/reef_test_no3Dbin \
- --headless \
- -i 5000
-
-  /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
- -d /home/bwilliams/encode/code/lichtfeld-studio/data/tandt/truck_copy \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/truck_copy \
-  --headless \
- -i 10000
-
-
+cd /home/bwilliams/encode/code/lichtfeld-studio
 /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
  -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva \
  --headless \
- -i 5000
+ --gut \
+ -i 50000
+
+
 
