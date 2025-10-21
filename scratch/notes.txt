@@ -27,7 +27,9 @@ bash /home/bwilliams/encode/code/scratch/estimate_intrinsics.sh \
 
 # Then we take the outputs and create an intrinsics.yaml that can be used by master-slam to improve the slam. 
 # It also will convert the intrinsics to a cameras.bin file,  which is used by lichtfeld-studio for splatting,
-# and will put this inside the for_splat folder inside the intermediate_data directory.
+# and will put this inside the for_splat folder inside the intermediate_data directory. This uses m-slams 
+# inbuilt resize_img() function to adjust the intrinsics accordingly for the keyframes that will be output by
+# m-slam.
 conda activate mast3r-slam
 python /home/bwilliams/encode/code/scratch/shuttle_intrinsics.py --dataset reef_soneva
 
@@ -39,9 +41,9 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
  --config /home/bwilliams/encode/code/MASt3R-SLAM/config/base.yaml \
  --calib /home/bwilliams/encode/data/intermediate_data/reef_soneva/intrinsics.yaml
 
- # Getting a strange `FileNotFoundError: [Errno 2] No such file or directory` error? For some reason
- # it seems trying to run on reef data as the first dataset after reboot doesn't work. So first run the 
- # demo data, then try the above command to run the reef data again.
+# Getting a strange `FileNotFoundError: [Errno 2] No such file or directory` error? For some reason
+# it seems trying to run on reef data as the first dataset after reboot doesn't work. So first run the 
+# demo data, then try the above command to run the reef data again.
 
 # Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format.
 # We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
@@ -50,6 +52,8 @@ python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --datas
 # Optional, could try add some funcionality to make points3D.bin, potentially from the points3D.bin output
 # by master-slam? Apparently its not needed as lichtfeld-studio doesn't need it, its just speeds up/improves
 # the early stages of splatting?
+
+
 
 # Now lets try splatting with the m-slam outputs and conversions to colmap:
 cd /home/bwilliams/encode/code/lichtfeld-studio
@@ -61,4 +65,24 @@ cd /home/bwilliams/encode/code/lichtfeld-studio
  -i 10000
 
 
+
+
+
+############################
+# Scratch stuff
+# rerun.io
+# Now we can visualize the SLAM outputs to verify the camera poses and point cloud look correct:
+source ben-splat-env/bin/activate
+python /home/bwilliams/encode/code/scratch/visualize_slam_rerun.py --dataset reef_soneva
+
+# Optional flags:
+# --no-images              # Skip loading keyframe images (faster, shows only frustums)
+# --downsample 0.1         # Show only 10% of points (useful for large point clouds)
+
+# What to check in Rerun viewer:
+# - Camera frustums positioned around the point cloud
+# - Cameras "look into" the scene (not away from it)
+# - Scale is consistent (cameras not too huge/tiny)
+# - Use timeline slider to step through camera sequence
+# - Click on frustums to see the actual keyframe images
 
