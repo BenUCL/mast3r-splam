@@ -1,88 +1,10 @@
-# Oct 15th 2025
-# Got lichtfeld-studio working on small sweet-coral data (338 images)
-# Got mast3r-slam working on their demo data
-# Now want to get mast3r-slam working on reef data. The small sweet-coral dataset
-# is only a one small patch of a larger area, so the image sequence jumps about which
-# is not ideal for slam, for example:
-1435 - 1579, seems to swooping back around, looks like 79 is flipped relative to 35
-1584 - 1695, missing images
-1724 - 1828, missing images but looks like it continues?
-1884 - 1995, missing images?
-1857 - 1981, missing images, doesnt look like same spot
 
-# So I am now downloading the full dataset and will try that. 
-# Questions/to do's: 
-- Should I use both stereo cameras, or just 1. If using both do I need
-    to add camera settings etc to the outputs, like for colmap? Sergei may
-    have this on the hugging face dataset online but seems like another technical step
-    I might want to avoid for now.
-- I'll need to downsample the images, they are far bigger the necessary atm. Do I still have script
-    to do this from when me and Sergei worked in CBER?
+# Run m-slam all the way through to splatting
+# Starting with the soneva reef dataset one, left hand side (LHS) only first.
 
-
-#################################################### 
-# Downloading larger sweet-coral data from HF
-# Used'hf download' CLI (replaces deprecated 'huggingface-cli download')
-# Installed huggingface_hub in uv env and logged in via huggingface-cli login
-# Had to fix uv PATH issue so CLI works inside env
-# hf download wildflow/sweet-corals --repo-type dataset \
-#   --include "_indonesia_tabuhan_p1_20250210/corrected/images/**" \
-#   --local-dir /home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210
-# Kept hitting rate limits of 1000 items per 5min with HF
-# First, count images:
-git ls-tree -r --name-only HEAD -- _indonesia_tabuhan_p1_20250210/corrected/images \
- | grep -Ei '\.(jpg|jpeg|png|tif|tiff)$' \
- | wc -l
-# should be 6590 images in corrected/images. Now run actual download with a massively 
-# over engineered vibe coded command form chatgpt. It works and avoids rate limits which is good:
-# 0) Vars (adjust if you like)
-TMP=/home/bwilliams/encode/data/_tmp_hf_sweet
-DST=/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210
-SUB=_indonesia_tabuhan_p1_20250210/corrected/images/**
-
-# 1) One-time deps
-sudo apt-get update && sudo apt-get install -y git-lfs
-git lfs install
-
-# 2) Fresh, minimal clone (no big files yet)
-rm -rf "$TMP"
-git clone --filter=blob:none https://huggingface.co/datasets/wildflow/sweet-corals "$TMP"
-cd "$TMP"
-
-# 3) Keep speed but avoid 429s (tune concurrency)
-git config lfs.concurrenttransfers 3
-git config lfs.fetchrecentrefsdays 0
-git config lfs.fetchrecentremoterefs false
-
-# 4) Fetch ONLY your folder (shows progress + ETA; resumable)
-git lfs fetch --include "$SUB" --exclude ""
-
-# 5) Materialise to working tree
-git lfs checkout "$SUB"
-
-# 6) Copy to your final directory (progress shown; resumable)
-rsync -av --progress "_indonesia_tabuhan_p1_20250210/corrected/images/" \
-  "$DST/_indonesia_tabuhan_p1_20250210/corrected/images/"
-
-# 7) (Optional) clean up the temp clone
-cd ~
-rm -rf "$TMP"
-
-
-
-#######################################################################
-# Downloading smaller datasets from Sergei:
-cd /home/bwilliams/encode/data
-# Run this, but get full paths form the link Sergei shared
-gsutil -m cp -r \
-  "gs://wildflow-ben-williams-r67..." \
-  "gs://wildflow-ben-williams-r67..." \
-  .
-
-#########################################################################
-# Okay am starting with the soneva one, left hand side (LHS) only first.
 # First had to downsample to 1600. Used:
 /home/bwilliams/encode/code/scratch/downsample_img.sh # change dirs in the script for future use
+
 # Then have to convert to png:
 conda activate mast3r-slam
 python /home/bwilliams/encode/code/scratch/jpeg2png.py # again, change dirs as appropriate
@@ -95,8 +17,6 @@ python main.py --dataset datasets/reef_soneva --config config/base.yaml
   so how to add in second camera?
 - Will try to make splat from it, but also don't have the groundtruth from agisoft to compare against like we did
   with the small patch from sweet-coral
-- Will first need to check my notes about adding colmap format. Though maybe check if Alejandro's repo outputs colmap?
-- check 3.3 
 
 # Next I solved the intrinsics estimation. More notes in Notion, but in short we run colmap on the first 100 raw
 # images (not keyframes) which can be used to estimate the intrinsics with a bash script that calls colmap functions.
@@ -119,6 +39,10 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
  --config /home/bwilliams/encode/code/MASt3R-SLAM/config/base.yaml \
  --calib /home/bwilliams/encode/data/intermediate_data/reef_soneva/intrinsics.yaml
 
+ # Getting a strange `FileNotFoundError: [Errno 2] No such file or directory` error? For some reason
+ # it seems trying to run on reef data as the first dataset after reboot doesn't work. So first run the 
+ # demo data, then try the above command to run the reef data again.
+
 # Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format.
 # We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
 python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --dataset reef_soneva
@@ -134,7 +58,7 @@ cd /home/bwilliams/encode/code/lichtfeld-studio
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva \
  --headless \
  --gut \
- -i 50000
+ -i 10000
 
 
 
