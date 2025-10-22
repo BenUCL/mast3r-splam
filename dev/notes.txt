@@ -56,16 +56,15 @@ python /home/bwilliams/encode/code/dev/convert_to_pinhole.py --dataset reef_sone
 
 # Now convert the .ply pointcloud output by m-slam to a points3d.bin for lichtfeld-studio. This will read where the
 # .ply is and save the new points3d.bin alongside the cameras.bin and images.bin file ready for splatting.
-
+/home/bwilliams/encode/code/dev/mslam_ply_to_points3d.py --dataset reef_soneva
 
 # Now lets try splatting with the m-slam outputs and conversions to colmap:
 cd /home/bwilliams/encode/code/lichtfeld-studio
 /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
  -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva \
+ -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva_ply \
  --headless \
- --random \
- -i 20000
+ -i 25000
 
  
  cd /home/bwilliams/encode/code/lichtfeld-studio
@@ -73,7 +72,6 @@ cd /home/bwilliams/encode/code/lichtfeld-studio
  -d /home/bwilliams/encode/data/intermediate_data/truck_slam_splat/for_splat \
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/truck_slam_splat \
  --headless \
- --random \
  -i 20000
 
 

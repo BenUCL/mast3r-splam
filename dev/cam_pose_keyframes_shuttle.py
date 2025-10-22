@@ -7,7 +7,7 @@ Convert MASt3R-SLAM keyframes and TUM formatted poses to COLMAP format for Licht
 This script:
 1. Copies/symlinks keyframes to the LichtFeld images directory
 2. Converts TUM poses (camera→world) to COLMAP format (world→camera)
-3. Generates images.txt with proper COLMAP headers and pose format
+3. Generates images.txt and images.bin with proper COLMAP headers and pose format
 
 Input:
   - MASt3R-SLAM keyframes: logs/keyframes/<dataset>/
