@@ -3,11 +3,11 @@
 # Starting with the soneva reef dataset one, left hand side (LHS) only first.
 
 # First had to downsample to 1600. Used:
-/home/bwilliams/encode/code/scratch/downsample_img.sh # change dirs in the script for future use
+/home/bwilliams/encode/code/dev/downsample_img.sh # change dirs in the script for future use
 
 # Then have to convert to png:
 conda activate mast3r-slam
-python /home/bwilliams/encode/code/scratch/jpeg2png.py # again, change dirs as appropriate
+python /home/bwilliams/encode/code/dev/jpeg2png.py # again, change dirs as appropriate
 
 # Now try mast3r-slam:
 python main.py --dataset datasets/reef_soneva --config config/base.yaml
@@ -21,7 +21,7 @@ python main.py --dataset datasets/reef_soneva --config config/base.yaml
 # Next I solved the intrinsics estimation. More notes in Notion, but in short we run colmap on the first 100 raw
 # images (not keyframes) which can be used to estimate the intrinsics with a bash script that calls colmap functions.
 # This will also output a summary text file on how well it did:
-bash /home/bwilliams/encode/code/scratch/estimate_intrinsics.sh \
+bash /home/bwilliams/encode/code/dev/estimate_intrinsics.sh \
 --images_path /home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled_png/ \
 --dataset_name reef_soneva
 
@@ -31,7 +31,7 @@ bash /home/bwilliams/encode/code/scratch/estimate_intrinsics.sh \
 # inbuilt resize_img() function to adjust the intrinsics accordingly for the keyframes that will be output by
 # m-slam.
 conda activate mast3r-slam
-python /home/bwilliams/encode/code/scratch/shuttle_intrinsics.py --dataset reef_soneva
+python /home/bwilliams/encode/code/dev/shuttle_intrinsics.py --dataset reef_soneva
 
 # Next, we can actually run m-slam. We will find the reconstruction is better with these intrinisics than with
 # the default intrinsics yaml used by m-slam:
@@ -45,14 +45,17 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
 # it seems trying to run on reef data as the first dataset after reboot doesn't work. So first run the 
 # demo data, then try the above command to run the reef data again.
 
-# Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format.
+# Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format in images.bin.
 # We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
-python /home/bwilliams/encode/code/scratch/cam_pose_keyframes_shuttle.py --dataset reef_soneva
+python /home/bwilliams/encode/code/dev/cam_pose_keyframes_shuttle.py --dataset reef_soneva
 
-# Optional, could try add some funcionality to make points3D.bin, potentially from the points3D.bin output
-# by master-slam? Apparently its not needed as lichtfeld-studio doesn't need it, its just speeds up/improves
-# the early stages of splatting?
+# Given m-slam actually undistorts the images, we now want to modify the intrinsics (camera.bin .txt) file again
+# again to switch from OPENCV to PINHOLE models, removing the distortion parameters. 
+# TODO: do this earlier within shuttle_intrinsics.py.
+python /home/bwilliams/encode/code/dev/convert_to_pinhole.py --dataset reef_soneva
 
+# Now convert the .ply pointcloud output by m-slam to a points3d.bin for lichtfeld-studio. This will read where the
+# .ply is and save the new points3d.bin alongside the cameras.bin and images.bin file ready for splatting.
 
 
 # Now lets try splatting with the m-slam outputs and conversions to colmap:
@@ -61,8 +64,17 @@ cd /home/bwilliams/encode/code/lichtfeld-studio
  -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
  -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva \
  --headless \
- --gut \
- -i 10000
+ --random \
+ -i 20000
+
+ 
+ cd /home/bwilliams/encode/code/lichtfeld-studio
+/home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
+ -d /home/bwilliams/encode/data/intermediate_data/truck_slam_splat/for_splat \
+ -o /home/bwilliams/encode/code/lichtfeld-studio/output/truck_slam_splat \
+ --headless \
+ --random \
+ -i 20000
 
 
 
