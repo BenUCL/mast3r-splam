@@ -50,7 +50,7 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
 python /home/bwilliams/encode/code/dev/cam_pose_keyframes_shuttle.py --dataset reef_soneva
 
 # Given m-slam actually undistorts the images, we now want to modify the intrinsics (camera.bin .txt) file again
-# again to switch from OPENCV to PINHOLE models, removing the distortion parameters. 
+# to switch from OPENCV to PINHOLE models, removing the distortion parameters. 
 # TODO: do this earlier within shuttle_intrinsics.py.
 python /home/bwilliams/encode/code/dev/convert_to_pinhole.py --dataset reef_soneva
 
@@ -59,21 +59,13 @@ python /home/bwilliams/encode/code/dev/convert_to_pinhole.py --dataset reef_sone
 /home/bwilliams/encode/code/dev/mslam_ply_to_points3d.py --dataset reef_soneva
 
 # Now lets try splatting with the m-slam outputs and conversions to colmap:
-cd /home/bwilliams/encode/code/lichtfeld-studio
-/home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
- -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/m-slam_reef_soneva_ply \
- --headless \
- -i 25000
+python /home/bwilliams/encode/code/dev/train_splat.py \
+  --lichtfeld /home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
+  -d /home/bwilliams/encode/data/intermediate_data/reef_soneva/for_splat \
+  -o /home/bwilliams/encode/code/lichtfeld-studio/output/scratch \
+  --headless -i 250000 --max-cap 1000000
 
  
- cd /home/bwilliams/encode/code/lichtfeld-studio
-/home/bwilliams/encode/code/lichtfeld-studio/build/LichtFeld-Studio \
- -d /home/bwilliams/encode/data/intermediate_data/truck_slam_splat/for_splat \
- -o /home/bwilliams/encode/code/lichtfeld-studio/output/truck_slam_splat \
- --headless \
- -i 20000
-
 
 
 
