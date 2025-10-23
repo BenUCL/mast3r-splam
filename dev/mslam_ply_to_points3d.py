@@ -46,11 +46,29 @@ def main():
         default=10.0,
         help='Sample percentage (default: 10.0). Lower = fewer points, faster. Higher = more detail.'
     )
+    parser.add_argument(
+        '--mslam_logs_dir',
+        type=str,
+        default=None,
+        help='Path to MASt3R-SLAM logs directory (default: auto-detect from intermediate_data or fallback to MASt3R-SLAM/logs)'
+    )
     
     args = parser.parse_args()
     
+    # Determine MASt3R-SLAM logs location
+    if args.mslam_logs_dir:
+        mslam_logs = Path(args.mslam_logs_dir)
+    else:
+        # Try new location first (intermediate_data)
+        new_location = INTERMEDIATE_DATA_ROOT / args.dataset / 'mslam_logs'
+        if new_location.exists():
+            mslam_logs = new_location
+        else:
+            # Fallback to old location (backward compatibility)
+            mslam_logs = MSLAM_ROOT / 'logs'
+    
     # Construct paths
-    input_ply = MSLAM_ROOT / 'logs' / f'{args.dataset}.ply'
+    input_ply = mslam_logs / f'{args.dataset}.ply'
     output_dir = INTERMEDIATE_DATA_ROOT / args.dataset / 'for_splat' / 'sparse' / '0'
     output_bin = output_dir / 'points3D.bin'
     
@@ -69,12 +87,6 @@ def main():
     print(f"Output:         {output_bin}")
     print(f"Sample %:       {args.sample}%")
     print()
-    
-    # Backup existing points3D.bin if present
-    if output_bin.exists():
-        backup = output_bin.with_suffix('.bin.backup')
-        output_bin.rename(backup)
-        print(f"✓ Backed up existing file to: {backup.name}")
     
     # Convert using wildflow
     config = {

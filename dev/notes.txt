@@ -9,18 +9,57 @@
 conda activate mast3r-slam
 python /home/bwilliams/encode/code/dev/jpeg2png.py # again, change dirs as appropriate
 
-# Now try mast3r-slam:
-python main.py --dataset datasets/reef_soneva --config config/base.yaml
+################################################################################
+# FULL PIPELINE (Automated via run_pipeline.py)
+################################################################################
 
-# Some notes:
-- It seems to sort of work. There are some gaps and I wonder if these are because its only using mono not stereo?
-  so how to add in second camera?
-- Will try to make splat from it, but also don't have the groundtruth from agisoft to compare against like we did
-  with the small patch from sweet-coral
+# The full pipeline from intrinsics estimation through gaussian splatting is now
+# automated with run_pipeline.py. This ensures all outputs are organized in one
+# directory and the configuration is saved for reproducibility.
 
-# Next I solved the intrinsics estimation. More notes in Notion, but in short we run colmap on the first 100 raw
-# images (not keyframes) which can be used to estimate the intrinsics with a bash script that calls colmap functions.
-# This will also output a summary text file on how well it did:
+# Step 1: Create a config file (copy from template)
+cp /home/bwilliams/encode/code/dev/pipeline_config_template.yaml my_run_config.yaml
+# Edit my_run_config.yaml:
+#   - Set run_name (e.g., "reef_soneva")
+#   - Set images_path
+#   - Adjust parameters as needed
+
+# Step 2: Run the complete pipeline
+cd /home/bwilliams/encode/code
+conda activate mast3r-slam  # or ben-splat-env
+python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml
+
+# The pipeline will:
+# 1. Estimate intrinsics with COLMAP
+# 2. Convert intrinsics for MASt3R-SLAM and LichtFeld
+# 3. Run MASt3R-SLAM
+# 4. Move MASt3R-SLAM outputs to run directory
+# 5. Convert poses to COLMAP format
+# 6. Convert PLY to points3D.bin
+# 7. Train Gaussian Splatting
+
+# All outputs will be in:
+# /home/bwilliams/encode/data/intermediate_data/{run_name}/
+#   ├── pipeline_config.yaml     # Config used for this run
+#   ├── pipeline.log             # Full execution log
+#   ├── colmap_outputs/          # COLMAP intrinsics
+#   ├── intrinsics.yaml          # For MASt3R-SLAM
+#   ├── mslam_logs/              # MASt3R-SLAM outputs (keyframes, poses, PLY)
+#   ├── for_splat/               # COLMAP format for splatting
+#   └── splats/                  # Final splat outputs
+
+# To resume from a specific step (e.g., if step 3 failed):
+python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml --start-from 3
+
+# To run only a specific step (e.g., re-run splatting with different params):
+python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml --only 7
+
+################################################################################
+# MANUAL STEP-BY-STEP (Original Method - Still Supported)
+################################################################################
+
+# If you prefer to run steps manually or need more control, you can still run
+# each script individually:
 cd /home/bwilliams/encode/code
 source ben-splat-env/bin/activate
 python /home/bwilliams/encode/code/dev/estimate_intrinsics.py \

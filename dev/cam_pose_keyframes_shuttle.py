@@ -277,12 +277,30 @@ def main():
         default=None,
         help='Camera ID to use (default: auto-detect from cameras.txt or use 1)'
     )
+    parser.add_argument(
+        '--mslam_logs_dir',
+        type=str,
+        default=None,
+        help='Path to MASt3R-SLAM logs directory (default: auto-detect from intermediate_data or fallback to MASt3R-SLAM/logs)'
+    )
     
     args = parser.parse_args()
     
+    # Determine MASt3R-SLAM logs location
+    if args.mslam_logs_dir:
+        mslam_logs = Path(args.mslam_logs_dir)
+    else:
+        # Try new location first (intermediate_data)
+        new_location = INTERMEDIATE_DATA_ROOT / args.dataset / 'mslam_logs'
+        if new_location.exists():
+            mslam_logs = new_location
+        else:
+            # Fallback to old location (backward compatibility)
+            mslam_logs = MSLAM_ROOT / 'logs'
+    
     # Construct paths
-    keyframes_src = MSLAM_ROOT / 'logs' / 'keyframes' / args.dataset
-    tum_poses = MSLAM_ROOT / 'logs' / f'{args.dataset}.txt'
+    keyframes_src = mslam_logs / 'keyframes' if (mslam_logs / 'keyframes').exists() else mslam_logs / 'keyframes' / args.dataset
+    tum_poses = mslam_logs / f'{args.dataset}.txt'
     
     dataset_root = INTERMEDIATE_DATA_ROOT / args.dataset
     images_dir = dataset_root / 'for_splat' / 'images'
