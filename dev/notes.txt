@@ -21,15 +21,19 @@ python main.py --dataset datasets/reef_soneva --config config/base.yaml
 # Next I solved the intrinsics estimation. More notes in Notion, but in short we run colmap on the first 100 raw
 # images (not keyframes) which can be used to estimate the intrinsics with a bash script that calls colmap functions.
 # This will also output a summary text file on how well it did:
-bash /home/bwilliams/encode/code/dev/estimate_intrinsics.sh \
+cd /home/bwilliams/encode/code
+source ben-splat-env/bin/activate
+python /home/bwilliams/encode/code/dev/estimate_intrinsics.py \
 --images_path /home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled_png/ \
---dataset_name reef_soneva
+--dataset reef_soneva \
+--num_images 100 \
+--camera_model OPENCV
 
 # Then we take the outputs and create an intrinsics.yaml that can be used by master-slam to improve the slam. 
-# It also will convert the intrinsics to a cameras.bin file,  which is used by lichtfeld-studio for splatting,
-# and will put this inside the for_splat folder inside the intermediate_data directory. This uses m-slams 
-# inbuilt resize_img() function to adjust the intrinsics accordingly for the keyframes that will be output by
-# m-slam.
+# It also will convert the intrinsics to cameras.bin/txt files for lichtfeld-studio splatting.
+# Key: intrinsics.yaml uses OPENCV (with distortion) at raw resolution for MASt3R-SLAM.
+#      cameras.bin/txt use PINHOLE (no distortion) at SLAM resolution for LichtFeld-Studio.
+#      This is because MASt3R-SLAM undistorts keyframes internally before saving them.
 conda activate mast3r-slam
 python /home/bwilliams/encode/code/dev/shuttle_intrinsics.py --dataset reef_soneva
 
@@ -48,11 +52,6 @@ python /home/bwilliams/encode/code/MASt3R-SLAM/main.py \
 # Now master-slam has run we want to convert the poses estimated by m-slam to the colmap format in images.bin.
 # We'll put this converted file into the splatting folder and copy over the keyframes from m-slam as well
 python /home/bwilliams/encode/code/dev/cam_pose_keyframes_shuttle.py --dataset reef_soneva
-
-# Given m-slam actually undistorts the images, we now want to modify the intrinsics (camera.bin .txt) file again
-# to switch from OPENCV to PINHOLE models, removing the distortion parameters. 
-# TODO: do this earlier within shuttle_intrinsics.py.
-python /home/bwilliams/encode/code/dev/convert_to_pinhole.py --dataset reef_soneva
 
 # Now convert the .ply pointcloud output by m-slam to a points3d.bin for lichtfeld-studio. This will read where the
 # .ply is and save the new points3d.bin alongside the cameras.bin and images.bin file ready for splatting.
