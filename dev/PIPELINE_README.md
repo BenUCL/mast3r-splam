@@ -10,7 +10,7 @@ cp pipeline_config_template.yaml my_config.yaml
 
 # 2. Edit my_config.yaml (set run_name, images_path, etc.)
 
-# 3. Run the pipeline
+# 3. Run the full pipeline
 cd /home/bwilliams/encode/code/dev
 conda activate mast3r-slam
 python run_pipeline.py --config my_config.yaml
@@ -41,7 +41,7 @@ The pipeline executes these steps in order (with timing reported for each):
 ### 3. MASt3R-SLAM
 - **What**: Runs visual SLAM on full image sequence
 - **Why**: Estimates camera poses and builds sparse 3D point cloud
-- **Typical Duration**: 5-30min (depends on sequence length and visualization settings)
+- **Typical Duration**: This is a slow step. On the lab 3090 I found approx. 2min for a dataset of 500 images with the default keyframe settings.
 - **Outputs**:
   - `keyframes/` - Undistorted keyframe images selected by SLAM
   - `{dataset_name}.txt` - Camera poses in TUM format (timestamp tx ty tz qx qy qz qw)
@@ -78,7 +78,7 @@ The pipeline executes these steps in order (with timing reported for each):
 ### 7. Gaussian Splatting Training (`train_splat.py`)
 - **What**: Trains 3D Gaussian Splatting model with LichtFeld-Studio
 - **Why**: Creates final splat representation for novel view synthesis
-- **Typical Duration**: 5-60min (depends on iterations, image count, complexity)
+- **Typical Duration**: This is a slow step. On the lab 3090 I found approx. 2min for a dataset of 500 images with the default keyframe settings output by mast3r-slam.
 - **Outputs**:
   - `splats/splat_*.ply` - Trained Gaussian splat models (checkpoints)
   - `splats/run.log` - Full training output
@@ -126,12 +126,21 @@ All outputs for a run are organized under `/intermediate_data/{run_name}/`:
 │       ├── images.txt
 │       └── points3D.bin           # Sampled point cloud for initialization (~500K-1M points)
 │
-└── splats/                        # Step 7: Gaussian splatting outputs
-    ├── splat_25000.ply            # Trained splat model (final checkpoint)
-    ├── splat_*.ply                # Intermediate checkpoints (if saved)
-    ├── run.log                    # Full LichtFeld-Studio output
-    └── run_report.txt             # Concise summary with training progress
+├── splats/                        # Step 7: Gaussian splatting outputs (first run)
+│   ├── splat_25000.ply            # Trained splat model (final checkpoint)
+│   ├── splat_*.ply                # Intermediate checkpoints (if saved)
+│   ├── run.log                    # Full LichtFeld-Studio output
+│   └── run_report.txt             # Concise summary with training progress
+│
+├── splats1/                       # Step 7 re-run with different params (e.g., different max-cap)
+│   ├── splat_25000.ply
+│   └── ...
+│
+└── splats2/                       # Step 7 another re-run
+    └── ...
 ```
+
+**Note on Splats Versioning**: When you re-run step 7 (e.g., with `--only 7` after changing parameters like `max_cap` in the config), the pipeline automatically creates `splats1/`, `splats2/`, etc. instead of overwriting `splats/`. This allows you to experiment with different splatting parameters without losing previous results.
 
 ### Logging Details
 
@@ -168,6 +177,36 @@ To re-run a specific step (e.g., with different parameters):
 # Edit config with new parameters
 python run_pipeline.py --config my_config.yaml --only 7
 ```
+
+### Re-run Splatting with Different Parameters
+
+Step 7 (Gaussian Splatting) supports automatic versioning and **command-line parameter overrides**, allowing you to run multiple splatting experiments within the same run folder **without editing the config file**. Each splat run creates sequential output folders (splats/, splats1/, splats2/, etc.), the command used is stored in splat/run_report.txt.
+
+```bash
+# First run with original config (if not done already in a full pipeline run)
+python run_pipeline.py --config my_config.yaml
+# Creates: /intermediate_data/pipeline_test3/splats/
+
+# Re-run with different max-cap (no config edit needed!)
+python run_pipeline.py --config my_config.yaml --only 7 --max-cap 200000
+# Creates: /intermediate_data/pipeline_test3/splats1/
+
+# Try with different iterations and max-cap
+python run_pipeline.py --config my_config.yaml --only 7 -i 50000 --max-cap 2000000
+# Creates: /intermediate_data/pipeline_test3/splats2/
+```
+
+**Available Step 7 command-line overrides:**
+- `-i, --iterations N` - Number of training iterations
+- `--max-cap N` - Maximum splat count after densification  
+- `--headless` / `--no-headless` - Run with/without GUI
+- `--splat-extra-args ARG1 ARG2 ...` - Additional LichtFeld-Studio arguments
+
+This allows you to compare results from different splatting parameters without:
+- Editing the config file repeatedly
+- Creating a whole new run directory
+- Overwriting previous splat results
+- Re-running the expensive SLAM steps (1-6)
 
 ### Interactive Mode
 

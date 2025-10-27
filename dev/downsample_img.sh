@@ -1,8 +1,8 @@
 #!/bin/bash
 # filepath: /home/bwilliams/encode/code/lichtfeld-studio/LichtFeld-Studio/dev/downsample_img.sh
 
-SOURCE_DIR="/home/bwilliams/encode/data/soneva/ootbm/03.07.25 LHS"
-OUTPUT_DIR="/home/bwilliams/encode/data/soneva/ootbm/LHS_downsampled"
+SOURCE_DIR="/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/images"
+OUTPUT_DIR="/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/downsampled"
 
 # Check if ImageMagick is installed
 if ! command -v convert &> /dev/null; then

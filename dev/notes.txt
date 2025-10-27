@@ -53,6 +53,11 @@ python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.ya
 
 # To run only a specific step (e.g., re-run splatting with different params):
 python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml --only 7
+# Note: Re-running step 7 will create splats1/, splats2/, etc. to avoid overwriting previous results
+
+# To experiment with different splatting parameters without editing config:
+python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml --only 7 --max-cap 500000
+python /home/bwilliams/encode/code/dev/run_pipeline.py --config my_run_config.yaml --only 7 -i 50000 --max-cap 2000000
 
 ################################################################################
 # MANUAL STEP-BY-STEP (Original Method - Still Supported)

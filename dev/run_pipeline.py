@@ -36,14 +36,21 @@ import time
 
 
 class PipelineRunner:
-    def __init__(self, config_path):
-        """Initialize pipeline with config file."""
+    def __init__(self, config_path, splat_overrides=None):
+        """Initialize pipeline with config file.
+        
+        Args:
+            config_path: Path to YAML config file
+            splat_overrides: Dict with optional overrides for step 7 (gaussian_splatting)
+                            Keys: iterations, max_cap, headless, extra_args
+        """
         self.config_path = Path(config_path)
         with open(self.config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
         self.run_name = self.config['run_name']
         self.paths = self.config['paths']
+        self.splat_overrides = splat_overrides or {}
         
         # Auto-detect dataset name from images path (MASt3R-SLAM uses directory name)
         images_dir = Path(self.paths['images_path'])
@@ -437,6 +444,7 @@ class PipelineRunner:
             - {run_dir}/for_splat/sparse/0/images.txt - Camera poses in COLMAP text format
         """
         step_name = "5. Pose/Keyframe Conversion"
+
         step_num = 5
         self.log(f"\n{'#'*70}")
         self.log(f"# {step_name}")
@@ -518,6 +526,9 @@ class PipelineRunner:
             - {run_dir}/splats/splat_*.ply - Gaussian splat PLY files at various iterations
             - {run_dir}/splats/run.log - Full training log
             - {run_dir}/splats/run_report.txt - Concise training summary with progress
+        
+        Note: If splats/ already exists, this will create splats1/, splats2/, etc.
+              to avoid overwriting previous runs with different parameters.
         """
         step_name = "7. Gaussian Splatting Training"
         step_num = 7
@@ -527,16 +538,53 @@ class PipelineRunner:
         
         step_start = time.time()
         
-        # Check if already done
-        output_dir = self.run_dir / 'splats'
-        final_ply = output_dir / f'splat_{self.config["gaussian_splatting"]["iterations"]}.ply'
-        if self.config['pipeline'].get('skip_existing', True) and final_ply.exists():
+        # Get iterations value (from override or config)
+        iterations = self.splat_overrides.get('iterations', self.config["gaussian_splatting"]["iterations"])
+        
+        # Find next available splats directory (splats, splats1, splats2, ...)
+        base_output_dir = self.run_dir / 'splats'
+        output_dir = base_output_dir
+        version = 0
+        
+        # Only skip if:
+        # 1. skip_existing is enabled
+        # 2. base splats/ exists with final PLY
+        # 3. NO command-line overrides were provided (user wants to experiment)
+        final_ply = base_output_dir / f'splat_{iterations}.ply'
+        if (self.config['pipeline'].get('skip_existing', True) and 
+            final_ply.exists() and 
+            not self.splat_overrides):
             self.log(f"⏭️  Skipping - output exists: {final_ply}")
             self.log_timing(step_num, step_name, 0, skipped=True)
             return True
         
+        # Find next available directory for new runs
+        # If base exists and we have overrides, or base exists from previous run, use versioned dir
+        if base_output_dir.exists():
+            version = 1
+            while True:
+                output_dir = self.run_dir / f'splats{version}'
+                if not output_dir.exists():
+                    break
+                version += 1
+            self.log(f"📁 Previous splats directory exists, using: {output_dir.name}")
+        else:
+            self.log(f"📁 Creating output directory: {output_dir.name}")
+        
         cfg = self.config['gaussian_splatting']
         dataset_dir = self.run_dir / 'for_splat'
+        
+        # Apply command-line overrides if provided
+        iterations = self.splat_overrides.get('iterations', cfg['iterations'])
+        max_cap = self.splat_overrides.get('max_cap', cfg['max_cap'])
+        headless = self.splat_overrides.get('headless', cfg.get('headless', True))
+        extra_args = self.splat_overrides.get('extra_args', cfg.get('extra_args', []))
+        
+        # Log overrides if any were used
+        if self.splat_overrides:
+            self.log(f"📝 Using command-line parameter overrides:")
+            for key, value in self.splat_overrides.items():
+                self.log(f"   {key}: {value}")
         
         cmd = [
             'python',
@@ -548,14 +596,16 @@ class PipelineRunner:
         ]
         
         # Add LichtFeld arguments
-        if cfg.get('headless', True):
+        if headless:
             cmd.append('--headless')
         
-        cmd.extend(['-i', str(cfg['iterations'])])
-        cmd.extend(['--max-cap', str(cfg['max_cap'])])
+        cmd.extend(['-i', str(iterations)])
+        # Max num splats. 
+        # NOTE: If point cloud from step 6 exceeds this then it will be capped at the point clouds number.
+        cmd.extend(['--max-cap', str(max_cap)])
         
         # Add extra args
-        cmd.extend(cfg.get('extra_args', []))
+        cmd.extend(extra_args)
         
         result = self.run_command(cmd, step_name)
         step_duration = time.time() - step_start
@@ -625,7 +675,19 @@ class PipelineRunner:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run the complete MASt3R-SLAM → Gaussian Splatting pipeline"
+        description="Run the complete MASt3R-SLAM → Gaussian Splatting pipeline",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run full pipeline
+  python run_pipeline.py --config my_config.yaml
+  
+  # Re-run step 7 with different max-cap (creates splats1/)
+  python run_pipeline.py --config my_config.yaml --only 7 --max-cap 500000
+  
+  # Re-run step 7 with different iterations and max-cap (creates splats2/)
+  python run_pipeline.py --config my_config.yaml --only 7 -i 50000 --max-cap 2000000
+"""
     )
     parser.add_argument(
         '--config',
@@ -648,10 +710,57 @@ def main():
         help='Run only a specific step (1-7)'
     )
     
+    # Step 7 (Gaussian Splatting) parameter overrides
+    splat_group = parser.add_argument_group('Step 7: Gaussian Splatting Overrides',
+                                            'Override config values for splatting parameters')
+    splat_group.add_argument(
+        '-i', '--iterations',
+        type=int,
+        default=None,
+        help='Number of training iterations (overrides config)'
+    )
+    splat_group.add_argument(
+        '--max-cap',
+        type=int,
+        default=None,
+        help='Maximum splat count after densification (overrides config)'
+    )
+    splat_group.add_argument(
+        '--headless',
+        action='store_true',
+        default=None,
+        help='Run in headless mode (overrides config)'
+    )
+    splat_group.add_argument(
+        '--no-headless',
+        action='store_true',
+        default=False,
+        help='Disable headless mode (overrides config)'
+    )
+    splat_group.add_argument(
+        '--splat-extra-args',
+        nargs='+',
+        default=None,
+        help='Additional LichtFeld-Studio arguments (overrides config extra_args)'
+    )
+    
     args = parser.parse_args()
     
+    # Build splat_overrides dict from command-line args
+    splat_overrides = {}
+    if args.iterations is not None:
+        splat_overrides['iterations'] = args.iterations
+    if args.max_cap is not None:
+        splat_overrides['max_cap'] = args.max_cap
+    if args.no_headless:
+        splat_overrides['headless'] = False
+    elif args.headless:
+        splat_overrides['headless'] = True
+    if args.splat_extra_args is not None:
+        splat_overrides['extra_args'] = args.splat_extra_args
+    
     # Create and run pipeline
-    pipeline = PipelineRunner(args.config)
+    pipeline = PipelineRunner(args.config, splat_overrides=splat_overrides)
     success = pipeline.run(start_from=args.start_from, only=args.only)
     
     sys.exit(0 if success else 1)
