@@ -9,6 +9,12 @@ ben-splat-env/
 .ipynb_checkpoints/
 .vscode/
 .DS_Store
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+build/
+dist/
 
 # Binary / large artefacts
 *.bin

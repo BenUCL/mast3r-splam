@@ -15,4 +15,5 @@ dependencies = [
     "torchvision>=0.24.0",
     "wildflow>=0.1.4",
     "huggingface-hub",
+    "python-dotenv>=1.2.1",
 ]
