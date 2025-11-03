@@ -153,7 +153,7 @@ def count_points(points3d_txt):
     return count
 
 
-def write_summary(work_dir, dataset_name, camera_model, num_images, cam_data, num_registered, num_points):
+def write_summary(work_dir, dataset_name, camera_model, images_path, total_images, num_images, cam_data, num_registered, num_points):
     """Write calibration summary file."""
     summary_file = work_dir / 'calibration_summary.txt'
     
@@ -168,6 +168,8 @@ def write_summary(work_dir, dataset_name, camera_model, num_images, cam_data, nu
         
         f.write(f"Camera Model:  {camera_model}\n")
         f.write(f"Resolution:    {cam_data['width']} x {cam_data['height']}\n")
+        f.write(f"Images Dir:    {images_path}\n")
+        f.write(f"Total Images:  {total_images}\n")
         f.write(f"Images Used:   {num_images}\n")
         f.write(f"Registered:    {num_registered} ({registration_pct:.1f}%)\n")
         f.write(f"3D Points:     {num_points}\n\n")
@@ -395,6 +397,8 @@ def main():
         work_dir,
         args.dataset or 'unknown',
         args.camera_model,
+        images_path,
+        total_images,
         len(selected_images),
         cam_data,
         num_registered,

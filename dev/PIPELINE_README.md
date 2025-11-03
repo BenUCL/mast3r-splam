@@ -16,6 +16,11 @@ conda activate mast3r-slam
 python run_pipeline.py --config my_config.yaml
 ```
 
+### Steps to perform before running this pipeline
+- Downsample all images (raw gopro images are huge 4mb files). use `downsample_img.sh`
+- If using stereo cameras, they may have a tiny difference in pixel count (e.g., I previously found: 1600x1399 vs 1600x1397). Use `crop_images_uniform.py` to crop to the smaller of the sizes. This will shave the excess pixels off the larger images.
+- Make sure all images are PNG's, use `/home/bwilliams/encode/code/dev/jpeg2png.py`. TODO: A [PR](https://github.com/rmurai0610/MASt3R-SLAM/pull/19) on the m-slam repo supports pngs or jpgs. although consider if this could cause memory issues.
+
 ## Pipeline Steps
 
 The pipeline executes these steps in order (with timing reported for each):

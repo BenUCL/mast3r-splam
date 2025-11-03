@@ -2,7 +2,7 @@
 # Copy this file and customize for each run
 
 # Unique identifier for this run (used for output directory naming)
-run_name: "medium"
+run_name: "stereo1"
 
 # Pipeline Control
 pipeline:
@@ -18,7 +18,7 @@ pipeline:
 # Paths 
 paths:
   # Raw input images (must be PNG)
-  images_path: "/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/small_784"
+  images_path: "//home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/combined_small"
   # Directory where intermediate data and outputs will be stored
   intermediate_data_root: "/home/bwilliams/encode/data/intermediate_data"
   # MASt3R-SLAM installation directory
