@@ -21,7 +21,6 @@ ben-splat-env/
 *.onnx
 *.tfrecord
 *.db
-*.lock
 
 # Images / media (avoid pushing large datasets)
 *.png
