@@ -162,7 +162,7 @@ def download_side(side: str, token: str, max_workers: int, etag_timeout: int) ->
 
 def safe_snapshot_download(side: str, token: str, max_workers: int, etag_timeout: int) -> Path:
   """Run snapshot_download with retries/backoff for transient errors."""
-  backoffs = [30, 60, 120]  # polite pauses before retries (sec)
+  backoff_sec = 60  # constant wait between retries
   attempt = 1
   while True:
     try:
@@ -170,12 +170,9 @@ def safe_snapshot_download(side: str, token: str, max_workers: int, etag_timeout
     except Exception as exc:  # broad catch to retry timeouts/network hiccups
       print(f"\nDownload attempt {attempt} failed: {exc}")
       traceback.print_exc(limit=2)
-      if attempt > len(backoffs):
-        print("❌ Max retries reached. Giving up.")
-        raise
-      wait = backoffs[attempt - 1]
-      print(f"⏳ Waiting {wait}s before retry {attempt + 1} ...")
-      time.sleep(wait)
+      print(f"⏳ Waiting {backoff_sec}s before retry {attempt + 1} ...")
+      print("(Download will resume from where it left off - Ctrl+C to stop)")
+      time.sleep(backoff_sec)
       attempt += 1
 
 
