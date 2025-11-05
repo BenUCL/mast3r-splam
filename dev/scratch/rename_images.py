@@ -10,8 +10,8 @@ import shutil
 from pathlib import Path
 
 # Configuration
-INPUT_DIR = "/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/combined_small_prep"
-OUTPUT_DIR = "/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/combined_small"
+INPUT_DIR = "/home/bwilliams/encode/data/sweet_corals/subset_stereo/processed"
+OUTPUT_DIR = "/home/bwilliams/encode/data/sweet_corals/subset_stereo/processed2"
 
 
 def extract_number(filename):

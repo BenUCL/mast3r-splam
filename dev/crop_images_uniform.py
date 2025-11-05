@@ -4,6 +4,7 @@ crop_images_uniform.py
 
 Crop all images in a directory to uniform dimensions (minimum width x minimum height).
 This ensures all images have identical dimensions, which is required by MASt3R-SLAM.
+This is useful when using stereo cameras!
 
 Usage:
     python crop_images_uniform.py --images_path /path/to/images

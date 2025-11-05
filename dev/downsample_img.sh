@@ -1,8 +1,9 @@
 #!/bin/bash
-# filepath: /home/bwilliams/encode/code/lichtfeld-studio/LichtFeld-Studio/dev/downsample_img.sh
+# run: 
+# /home/bwilliams/encode/code/dev/downsample_img.sh
 
-SOURCE_DIR="/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/combined_small"
-OUTPUT_DIR="/home/bwilliams/encode/data/sweet-coral_indo_tabuhan_p1_20250210/_indonesia_tabuhan_p1_20250210/corrected/combined_small_downsampled"
+SOURCE_DIR="/home/bwilliams/encode/data/sweet_corals/subset_stereo/raw"
+OUTPUT_DIR="/home/bwilliams/encode/data/sweet_corals/subset_stereo/raw_downsampled"
 
 # Check if ImageMagick is installed
 if ! command -v convert &> /dev/null; then
